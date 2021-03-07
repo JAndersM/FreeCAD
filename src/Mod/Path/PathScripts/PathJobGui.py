@@ -31,6 +31,7 @@ from PySide import QtCore, QtGui
 import FreeCAD
 import FreeCADGui
 
+import PathGui as PGui # ensure Path/Gui/Resources are loaded
 import PathScripts.PathJob as PathJob
 import PathScripts.PathJobCmd as PathJobCmd
 import PathScripts.PathJobDlg as PathJobDlg
@@ -210,7 +211,7 @@ class ViewProvider:
         return ":/icons/Path_Job.svg"
 
     def claimChildren(self):
-        children = self.obj.ToolController
+        children = []
         children.append(self.obj.Operations)
         if hasattr(self.obj, 'Model'):
             # unfortunately this function is called before the object has been fully loaded
@@ -222,6 +223,8 @@ class ViewProvider:
         if hasattr(self.obj, 'SetupSheet'):
             # when loading a job that didn't have a setup sheet they might not've been created yet
             children.append(self.obj.SetupSheet)
+        if hasattr(self.obj, 'Tools'):
+            children.append(self.obj.Tools)
         return children
 
     def onDelete(self, vobj, arg2=None):
@@ -519,6 +522,7 @@ class StockCreateCylinderEdit(StockEdit):
 class StockFromExistingEdit(StockEdit):
     Index = 3
     StockType = PathStock.StockType.Unknown
+    StockLabelPrefix = 'Stock'
 
     def editorFrame(self):
         return self.form.stockFromExisting
@@ -527,7 +531,7 @@ class StockFromExistingEdit(StockEdit):
         stock = self.form.stockExisting.itemData(self.form.stockExisting.currentIndex())
         if not (hasattr(obj.Stock, 'Objects') and len(obj.Stock.Objects) == 1 and obj.Stock.Objects[0] == stock):
             if stock:
-                stock = PathJob.createResourceClone(obj, stock, 'Stock', 'Stock')
+                stock = PathJob.createResourceClone(obj, stock, self.StockLabelPrefix , 'Stock')
                 stock.ViewObject.Visibility = True
                 PathStock.SetupStockObject(stock, PathStock.StockType.Unknown)
                 stock.Proxy.execute(stock)
@@ -553,7 +557,9 @@ class StockFromExistingEdit(StockEdit):
         index = -1
         for i, solid in enumerate(self.candidates(obj)):
             self.form.stockExisting.addItem(solid.Label, solid)
-            if solid.Label == stockName:
+            label="{}-{}".format(self.StockLabelPrefix, solid.Label)
+
+            if label == stockName:
                 index = i
         self.form.stockExisting.setCurrentIndex(index if index != -1 else 0)
 
@@ -707,7 +713,7 @@ class TaskPanel:
 
         vUnit = FreeCAD.Units.Quantity(1, FreeCAD.Units.Velocity).getUserPreferred()[2]
 
-        for row, tc in enumerate(sorted(self.obj.ToolController, key=lambda tc: tc.Label)):
+        for row, tc in enumerate(sorted(self.obj.Tools.Group, key=lambda tc: tc.Label)):
             self.form.activeToolController.addItem(tc.Label, tc)
             if tc == select:
                 index = row
@@ -847,7 +853,7 @@ class TaskPanel:
         # can only delete what is selected
         delete = edit
         # ... but we want to make sure there's at least one TC left
-        if len(self.obj.ToolController) == len(self.form.toolControllerList.selectedItems()):
+        if len(self.obj.Tools.Group) == len(self.form.toolControllerList.selectedItems()):
             delete = False
         # ... also don't want to delete any TCs that are already used
         if delete:

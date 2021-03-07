@@ -21,9 +21,9 @@
 # *                                                                         *
 # ***************************************************************************
 
-__title__  = "FreeCAD FEM mesh gmsh task panel for the document object"
+__title__ = "FreeCAD FEM mesh gmsh task panel for the document object"
 __author__ = "Bernd Hahnebach"
-__url__    = "https://www.freecadweb.org"
+__url__ = "https://www.freecadweb.org"
 
 ## @package task_mesh_gmsh
 #  \ingroup FEM
@@ -203,9 +203,10 @@ class _TaskPanel:
             error = gmsh_mesh.create_mesh()
         except Exception:
             import sys
+            error = sys.exc_info()[1]
             FreeCAD.Console.PrintMessage(
                 "Unexpected error when creating mesh: {}\n"
-                .format(sys.exc_info()[0])
+                .format(error)
             )
         if error:
             FreeCAD.Console.PrintMessage("Gmsh had warnings ...\n")

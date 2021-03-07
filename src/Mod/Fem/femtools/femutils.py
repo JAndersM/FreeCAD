@@ -28,9 +28,9 @@ a few unrelated function useful at various places in the Fem module.
 """
 
 
-__title__  = "FEM Utilities"
+__title__ = "FEM Utilities"
 __author__ = "Markus Hovorka, Bernd Hahnebach"
-__url__    = "https://www.freecadweb.org"
+__url__ = "https://www.freecadweb.org"
 
 
 import os
@@ -269,17 +269,28 @@ def getBoundBoxOfAllDocumentShapes(doc):
      no objects at all return ``None``.
     """
     overalboundbox = None
+    # netgen mesh obj has an attribute Shape which is an Document obj, which has no BB
+    # a FemMesh without a Shape could be clipped too
+    # https://forum.freecadweb.org/viewtopic.php?f=18&t=52920
     for o in doc.Objects:
-        # netgen mesh obj has an attribute Shape which is an Document obj, which has no BB
+
+        bb = None
         if hasattr(o, "Shape") and hasattr(o.Shape, "BoundBox"):
             try:
                 bb = o.Shape.BoundBox
             except Exception:
-                bb = None
+                pass
+        elif hasattr(o, "FemMesh") and hasattr(o.FemMesh, "BoundBox"):
+            try:
+                bb = o.FemMesh.BoundBox
+            except Exception:
+                pass
+        if bb:
             if bb.isValid():
                 if not overalboundbox:
                     overalboundbox = bb
-                overalboundbox.add(bb)
+                else:
+                    overalboundbox.add(bb)
     return overalboundbox
 
 

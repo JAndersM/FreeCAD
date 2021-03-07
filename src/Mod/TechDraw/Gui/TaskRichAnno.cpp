@@ -76,6 +76,7 @@ using namespace TechDrawGui;
 TaskRichAnno::TaskRichAnno(TechDrawGui::ViewProviderRichAnno* annoVP) :
     ui(new Ui_TaskRichAnno),
     blockUpdate(false),
+    m_mdi(nullptr),
     m_view(nullptr),
     m_annoVP(annoVP),
     m_baseFeat(nullptr),
@@ -202,7 +203,6 @@ TaskRichAnno::TaskRichAnno(TechDraw::DrawView* baseFeat,
 
 TaskRichAnno::~TaskRichAnno()
 {
-    delete ui;
 }
 
 void TaskRichAnno::updateTask()

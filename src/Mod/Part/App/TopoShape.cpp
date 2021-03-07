@@ -704,7 +704,10 @@ Base::Matrix4D TopoShape::getTransform(void) const
     return mtrx;
 }
 
-void TopoShape::setPlacement(const Base::Placement& rclTrf)
+/*!
+ * \obsolete
+ */
+void TopoShape::setShapePlacement(const Base::Placement& rclTrf)
 {
     const Base::Vector3d& pos = rclTrf.getPosition();
     Base::Vector3d axis;
@@ -718,7 +721,10 @@ void TopoShape::setPlacement(const Base::Placement& rclTrf)
     _Shape.Location(loc);
 }
 
-Base::Placement TopoShape::getPlacemet(void) const
+/*!
+ * \obsolete
+ */
+Base::Placement TopoShape::getShapePlacement(void) const
 {
     TopLoc_Location loc = _Shape.Location();
     gp_Trsf trsf = loc.Transformation();
@@ -865,7 +871,7 @@ void TopoShape::importBrep(const char *FileName)
         BRepTools::Read(aShape,encodeFilename(FileName).c_str(),aBuilder,pi);
         pi->EndScope();
 #else
-        BRepTools::Read(aShape,(const Standard_CString)FileName,aBuilder);
+        BRepTools::Read(aShape,(Standard_CString)FileName,aBuilder);
 #endif
         this->_Shape = aShape;
     }
@@ -1339,6 +1345,9 @@ unsigned int TopoShape::getMemSize (void) const
         TopExp::MapShapes(_Shape, M);
         for (int i=0; i<M.Extent(); i++) {
             const TopoDS_Shape& shape = M(i+1);
+            if (shape.IsNull())
+                continue;
+
             // add the size of the underlying geomtric data
             Handle(TopoDS_TShape) tshape = shape.TShape();
             memsize += tshape->DynamicType()->Size();
@@ -1350,7 +1359,15 @@ unsigned int TopoShape::getMemSize (void) const
                     // first, last, tolerance
                     memsize += 5*sizeof(Standard_Real);
                     const TopoDS_Face& face = TopoDS::Face(shape);
-                    BRepAdaptor_Surface surface(face);
+                    // if no geometry is attached to a face an exception is raised
+                    BRepAdaptor_Surface surface;
+                    try {
+                        surface.Initialize(face);
+                    }
+                    catch (const Standard_Failure&) {
+                        continue;
+                    }
+
                     switch (surface.GetType())
                     {
                     case GeomAbs_Plane:
@@ -1398,7 +1415,15 @@ unsigned int TopoShape::getMemSize (void) const
                     // first, last, tolerance
                     memsize += 3*sizeof(Standard_Real);
                     const TopoDS_Edge& edge = TopoDS::Edge(shape);
-                    BRepAdaptor_Curve curve(edge);
+                    // if no geometry is attached to an edge an exception is raised
+                    BRepAdaptor_Curve curve;
+                    try {
+                        curve.Initialize(edge);
+                    }
+                    catch (const Standard_Failure&) {
+                        continue;
+                    }
+
                     switch (curve.GetType())
                     {
                     case GeomAbs_Line:
@@ -2412,7 +2437,7 @@ TopoDS_Shape TopoShape::makeLongHelix(Standard_Real pitch, Standard_Real height,
     Handle(Geom_Surface) surf;
     Standard_Boolean isCylinder;
 
-    if (angle < Precision::Confusion()) {                                      // Cylindrical helix
+    if (std::fabs(angle) < Precision::Confusion()) {                           // Cylindrical helix
         if (radius < Precision::Confusion())
             Standard_Failure::Raise("Radius of helix too small");
         surf= new Geom_CylindricalSurface(cylAx2, radius);
@@ -2420,8 +2445,6 @@ TopoDS_Shape TopoShape::makeLongHelix(Standard_Real pitch, Standard_Real height,
     }
     else {                                                                     // Conical helix
         angle = Base::toRadians(angle);
-        if (angle < Precision::Confusion())
-            Standard_Failure::Raise("Angle of helix too small");
         surf = new Geom_ConicalSurface(gp_Ax3(cylAx2), angle, radius);
         isCylinder = false;
     }
@@ -4132,7 +4155,7 @@ TopoShape &TopoShape::makEFace(const std::vector<TopoShape> &shapes, const char 
     for(auto &s : shapes) {
         if (s.getShape().ShapeType() == TopAbs_COMPOUND)
             mkFace->useCompound(TopoDS::Compound(s.getShape()));
-        else
+        else if (s.getShape().ShapeType() != TopAbs_VERTEX)
             mkFace->addShape(s.getShape());
     }
     mkFace->Build();

@@ -257,7 +257,7 @@ StdCmdWindows::StdCmdWindows()
     sToolTipText  = QT_TR_NOOP("Windows list");
     sWhatsThis    = "Std_Windows";
     sStatusTip    = QT_TR_NOOP("Windows list");
-    //sPixmap     = "";
+    sPixmap       = "Std_Windows";
     eType         = 0;
 }
 
@@ -370,7 +370,7 @@ class FilterStatusBar : public QObject
 //    Q_OBJECT
 
 public:
-    FilterStatusBar(Action * action):QObject() {this->action = action;}
+    FilterStatusBar(Action * action):QObject(action) {this->action = action;}
 //    virtual ~FilterStatusBar() {}
 protected:
     Action * action;

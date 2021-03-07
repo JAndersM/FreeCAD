@@ -68,6 +68,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <stdexcept>
+#include <tuple>
 
 #include <cmath>
 #include <ctime>
@@ -76,12 +77,11 @@
 #include <QtGlobal>
 
 // Boost
-#include <boost/signals2.hpp>
+#include <boost_signals2.hpp>
 #include <boost/bind/bind.hpp>
 
-#include <boost/tuple/tuple.hpp>
 #include <boost/utility.hpp>
-#include <boost/graph/adjacency_list.hpp>
+#include <boost_graph_adjacency_list.hpp>
 
 #include <boost/program_options.hpp>
 //namespace po = boost::program_options;
